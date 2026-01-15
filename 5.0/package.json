@@ -1,7 +1,7 @@
 {
   "name": "force-navigator",
-  "version": "4.1.2",
-  "description": "Lightning Navigator",
+  "version": "5.0.0",
+  "description": "Salesforce Lightning Navigator Redux",
   "private": true,
   "scripts": {
     "watch": "webpack --mode=development --watch --config config/webpack.config.js",

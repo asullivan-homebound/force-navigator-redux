@@ -1,5 +1,5 @@
-# Salesforce Navigator for Lightning
-**[Available on Chrome Web Store now](https://chrome.google.com/webstore/detail/salesforce-navigator-for/pbjjdhghffpemcglcadejmkcpnpmlklh)**
+# Salesforce Navigator for Lightning Redux
+**[Forked from Chrome Web Store Version](https://chrome.google.com/webstore/detail/salesforce-navigator-for/pbjjdhghffpemcglcadejmkcpnpmlklh)**
 
 ## Now supports Lightning
 
@@ -51,14 +51,10 @@ UPDATE NOTES
 
 6/19 - Happy Juneteenth! Thanks to kacrouse for Custom Metadata Lightning handling, also updating several changed URLs across the platform
 
-
 Maintainer(s):
-[Danny Summerlin](http://summerlin.co)
+[Alex Sullivan](https://alexandersullivan.com)
 open to others!
-_based on Salesforce Navigator by [Daniel Nakov](https://twitter.com/dnak0v) and [Wes Weingartner](https://twitter.com/wes1278)_
-
-## License
-[MIT License](http://en.wikipedia.org/wiki/MIT_License)
+_based on Salesforce Navigator by [Danny Summerlin](https://dannysummerlin.com)_
 
 ## Privacy Policy
 This extension only runs locally in communication with your instance of Salesforce. No data is collected from any user, nor is extension activity tracked or reported to a third-party.
