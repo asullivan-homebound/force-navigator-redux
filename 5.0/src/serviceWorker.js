@@ -72,7 +72,13 @@ const goToUrl = (targetUrl, newTab, settings = {})=>{
 			
 			// Normalize domain prefix
 			let currentOrigin = tabs[0].url.match(/https:\/\/.*?\.com|https:\/\/.*?\.salesforce-setup\.com|https:\/\/.*?\.force\.com/)[0]
-			let domainPrefix = currentOrigin.replace('https://', '').replace('.lightning.force.com','').replace('.my.salesforce.com','').replace('.salesforce-setup.com','').replace('.force.com','')
+			// Remove all domain suffixes to get just the org prefix (e.g., "homebound")
+			let domainPrefix = currentOrigin.replace('https://', '')
+				.replace('.my.salesforce-setup.com', '')
+				.replace('.my.salesforce.com', '')
+				.replace('.lightning.force.com', '')
+				.replace('.salesforce-setup.com', '')
+				.replace('.force.com', '')
 
 			if (relativeUrl.startsWith('/lightning/setup/') || relativeUrl.startsWith('/lightning/setup/')) {
 				newUrl = "https://" + domainPrefix + ".my.salesforce-setup.com" + relativeUrl

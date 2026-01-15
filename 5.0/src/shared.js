@@ -610,7 +610,8 @@ export const forceNavigatorSettings = {
 				document.getElementById('sfnavStyleBox').classList = [forceNavigatorSettings.theme]
 			if(forceNavigator.sessionId !== null) { return }
 			safeSendMessage({ "action": "getApiSessionId", "serverUrl": forceNavigator.serverUrl }, response=>{
-				if(response && response.error) { console.error("response", response, chrome.runtime.lastError); return }
+				// Silently handle expected failures on edge-case domains (file.force.com, redirects, etc.)
+				if(response && response.error) { console.debug("Session not available:", response.error); return }
 				try {
 					forceNavigator.sessionId = unescape(response.sessionId)
 					forceNavigator.userId = unescape(response.userId)
@@ -833,10 +834,14 @@ export const forceNavigator = {
 				return true
 				break
 			case "commands.setup":
-				targetUrl = forceNavigator.serverInstance + (forceNavigatorSettings.lightningMode ? "/lightning/setup/SetupOneHome/home" : "/ui/setup/Setup")
+				// Always go to the Setup Home page on salesforce-setup.com
+				let setupPrefix = forceNavigator.serverInstance.split('.')[0]
+				targetUrl = "https://" + setupPrefix + ".my.salesforce-setup.com/lightning/setup/SetupOneHome/home"
 				break
 			case "commands.home":
-				targetUrl = forceNavigator.serverInstance + "/"
+				// Always go to the Lightning App home page
+				let homePrefix = forceNavigator.serverInstance.split('.')[0]
+				targetUrl = "https://" + homePrefix + ".lightning.force.com/lightning/page/home#/"
 				break
 			case "commands.logout":
 				targetUrl = forceNavigator.serverInstance + "/secur/logout.jsp"
@@ -1131,7 +1136,7 @@ export const forceNavigator = {
 	],
 	"urlMap": {
 		"setup.home": {
-			"lightning": "/lightning/page/home",
+			"lightning": "/lightning/setup/SetupOneHome/home",
 			"classic": "//"
 		},
 		"setup.setup": {
