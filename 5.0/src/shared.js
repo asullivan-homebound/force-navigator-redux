@@ -221,7 +221,10 @@ export const ui = {
 	// Add one search result to dropdown
 	"addSearchResult": (key,url="")=>{
 		if(url=="") {
-			url = (forceNavigator.commands[key]?.url ?? "#").replace('//','/')
+			url = (forceNavigator.commands[key]?.url ?? "#")
+			if (url.startsWith('//')) {
+				url = url.substring(1)
+			}
 		}
 		let r = document.createElement("a")
 		r.setAttribute("href", url)

@@ -51,12 +51,19 @@ const goToUrl = (targetUrl, newTab, settings = {})=>{
 	chrome.tabs.query({currentWindow: true, active: true}, (tabs)=>{
 		const re = new RegExp("\\w+-extension:\/\/"+chrome.runtime.id,"g");
 		targetUrl = targetUrl.replace(re,'')
-		let newUrl = targetUrl.match(/.*?\.com(.*)/)
-		newUrl = newUrl ? newUrl[1] : targetUrl
-		if(!targetUrl.includes('-extension:'))
-			newUrl = tabs[0].url.match(/.*?\.com/)[0] + newUrl
-		else
+		
+		let newUrl
+		if (targetUrl.startsWith('http://') || targetUrl.startsWith('https://') || targetUrl.startsWith('chrome-extension://')) {
 			newUrl = targetUrl
+		} else {
+			let relativeUrl = targetUrl.match(/.*?\.com(.*)/)
+			relativeUrl = relativeUrl ? relativeUrl[1] : targetUrl
+			if (!relativeUrl.startsWith('/')) {
+				relativeUrl = '/' + relativeUrl
+			}
+			newUrl = tabs[0].url.match(/.*?\.com|.*?\.salesforce-setup\.com|.*?\.force\.com/)[0] + relativeUrl
+		}
+
 		if(newTab)
 			chrome.tabs.create({ "active": false, "url": newUrl })
 		else
