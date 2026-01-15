@@ -1,22 +1,34 @@
-# Product Context - SAMPLE FOR UPDATING
+# Product Context
 
 ## Project Vision
 
-**Choreapp** is a comprehensive chore tracking and allowance management application designed to facilitate household harmony and financial literacy for families. The platform provides a shared digital space where parents can assign tasks, monitor progress, and manage allowance distributions, while children gain a sense of agency and accomplishment through gamified task completion and visual financial tracking.
+**Force Navigator** (Salesforce Navigator for Lightning) is a productivity extension for Salesforce professionals. It acts as a "command palette" or "Spotlight search" for Salesforce, allowing users to navigate directly to pages, create records, and perform administrative tasks without clicking through complex menus. It is designed to work seamlessly in both Salesforce Classic and Lightning Experience.
 
 ## Target Audience (Personas)
 
-1. **The Primary User:** Children who want to earn and manage their allowance through completed chores.
-2. **The Admin:** Parents and guardians who want to create a structured chore system for their children.
+1.  **The Administrator:** Salesforce Admins who need to quickly access Setup pages, Object Managers, and manage users (Login As).
+2.  **The Developer:** Developers who need to refresh metadata, toggle between Classic/Lightning, and access technical configurations.
+3.  **The Power User:** Sales/Service users who want to quickly create tasks, find records, or merge accounts without leaving their keyboard.
 
-## Core User Flows (The "Happy Paths")
+## Core User Flows
 
-- **Flow A:** Children earn allowance by completing chores.
-- **Flow B:** Parents manage chores and allowance distributions.
-- **Flow C:** Children view their allowance and progress.
-- **Flow D:** Parents view their children's progress and allowance.
+-   **Navigation:** User triggers the command palette (Ctrl+Shift+Space), types a page name (e.g., "Account Fields", "Deploy Status"), and hits Enter to navigate immediately.
+-   **Quick Actions:** User commands the extension to perform an action, such as "New Task", "Merge Accounts", or "Login as [User]".
+-   **Global Search:** User types `? [term]` to perform a global search across Salesforce records.
+-   **Contextual Commands:** Commands like "Copy Record ID" or "Toggle Lightning" that act on the current session or page.
+
+## Key Features
+
+-   **Command Palette Interface:** Keyboard-centric UI for speed.
+-   **Universal Compatibility:** Works in Classic and Lightning.
+-   **Metadata Aware:** Can index and search Setup pages, Objects, and Fields.
+-   **Productivity Tools:**
+    -   "Login As" shortcut.
+    -   "Merge Accounts" utility.
+    -   "New [Object]" shortcuts.
+    -   Theme support (Dark, Solarized, etc.).
 
 ## Tone & Vibe
 
-- **UI/UX:** Playful, gamified, and intuitive.
-- **Copywriting:** Clear, concise, and easy to understand.
+-   **UI/UX:** Fast, unobtrusive, keyboard-first, utilitarian but polished.
+-   **Philosophy:** "Don't make me click."

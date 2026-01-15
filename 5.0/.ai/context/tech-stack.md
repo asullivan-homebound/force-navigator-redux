@@ -1,195 +1,60 @@
-# Coding Standards & Agent Instructions - SAMPLE FOR UPDATING
+# Coding Standards & Tech Stack
 
 ## Technology Stack
 
-This project uses:
+This project is a Google Chrome Extension (Manifest V3).
 
-- **Frontend:** React 19 (JSX, functional components only), Vite
-- **Styling:** TailwindCSS 3.x (utility-first, mobile-responsive)
-- **Backend:** Firebase (Firestore, Cloud Functions, Auth)
-- **Deployment:** GitHub Actions → Firebase Hosting
+-   **Frontend:** Vanilla JavaScript (ES6+), HTML5, CSS3.
+-   **Build System:** Webpack 5.
+-   **Libraries:**
+    -   `lisan`: For localization/i18n.
+    -   `mousetrap`: For advanced keyboard shortcut handling.
+-   **Platform:** Chrome Extension APIs (Manifest V3).
+    -   `service_worker`: Background tasks.
+    -   `content_scripts`: Injected UI and page interaction.
+    -   `storage`: Saving user preferences (themes, toggles).
+    -   `cookies` / `activeTab`: Session management and API access.
 
----
-
-## 1. Code Style & Formatting
-
-### Naming Conventions
-
-- **Variables/Functions:** `camelCase` (e.g., `handleToggleChore`, `userIndex`)
-- **React Components:** `PascalCase` (e.g., `ParentDashboard`, `ConfirmModal`)
-- **Constants:** `UPPER_CASE_SNAKE` (e.g., `DEFAULTS`, `ASSETS`)
-- **Files:** Components use `PascalCase.jsx`, utilities use `camelCase.js`
-
-### Explicitness
-
-- Avoid single-letter variable names. Use descriptive names: `userIndex` not `i`, `familyDoc` not `d`.
-- Boolean variables should read as questions: `isLoading`, `hasPermission`, `canEdit`.
-
----
-
-## 2. React Patterns
+## Architecture
 
 ### Component Structure
+-   **`contentScript.js`**: The core logic that runs on Salesforce pages. It injects the command palette DOM, handles user input, and communicates with the background script.
+-   **`serviceWorker.js`**: (Background) Handles persistence, cross-origin requests (if necessary), and extension lifecycle events.
+-   **`popup.js`**: Handles the extension's popup action (browser toolbar icon).
+-   **`shared.js`**: Shared utility functions and constants.
 
-- **One component per file** in `src/components/`
-- Use **functional components** with hooks—no class components
-- Extract reusable logic into **custom hooks** (e.g., `useAuth`, `useFamily`)
+### Data Flow
+1.  **Initialization:** Content script detects Salesforce session.
+2.  **Indexing:** The extension may query Salesforce APIs to build an index of available Setup pages, Objects, and specific user data.
+3.  **Interaction:** User input in the command palette filters this index.
+4.  **Execution:** Selecting an item triggers a `window.location` change or an API call (e.g., creating a Task).
 
-### State Management
+## Coding Standards
 
-- Use **React Context** for global state (`AuthContext`, `FamilyContext`)
-- Prefer `useState` for local component state
-- Use `useEffect` cleanup functions to prevent memory leaks
+### Formatting & Style
+-   **Prettier:** Code is formatted using Prettier.
+-   **Naming:**
+    -   Variables/Functions: `camelCase` (e.g., `forceNavigator`, `launchMerger`).
+    -   Constants: `UPPER_CASE_SNAKE` (e.g., `ID_RE`).
+-   **Indentation:** Follows the `.editorconfig` and Prettier settings (likely 2 or 4 spaces/tabs).
 
-### Props
+### Best Practices
+-   **Security:**
+    -   Use `https` for all API calls.
+    -   Respect Salesforce Session IDs and Security settings.
+    -   Avoid `innerHTML` where possible to prevent XSS; prefer `createElement` / `appendChild`.
+-   **Performance:**
+    -   Debounce input in the search box.
+    -   Cache metadata/indexes where possible to avoid redundant API calls.
+-   **DOM Manipulation:**
+    -   Keep the injected DOM isolated (unique IDs/Classes, e.g., `#sfnav...`) to avoid conflicts with Salesforce's own CSS/JS.
 
-- Destructure props at the function signature level
-- Document complex prop shapes with JSDoc comments
+## Workflow
 
----
-
-## 3. Firebase & Firestore
-
-### Data Fetching
-
-- Prefer **real-time listeners** (`onSnapshot`) over one-time fetches (`getDocs`) for UI data
-- Use `getDocs` only for data that doesn't need live updates
-
-### Cloud Functions
-
-- Use Cloud Functions for **sensitive operations**: PIN hashing, email sending, data validation
-- Never expose secrets or API keys in client code
-- Cloud Functions should validate inputs and check authentication
-
-### Security Rules
-
-- All operations must be validated server-side in `firestore.rules`
-- Follow principle of least privilege—only grant necessary permissions
-- Test rules against edge cases before deployment
-
----
-
-## 4. UI/UX Standards
-
-### Modals (Critical)
-
-> **⚠️ NEVER use browser popups. They are blocked and bad UX.**
->
-> See workflow: `.agent/workflows/modals.md`
-
-❌ **Banned:** `alert()`, `confirm()`, `prompt()`, `window.alert()`, etc.  
-✅ **Use instead:** `InfoModal`, `ConfirmModal`, `LoadingModal` from `src/components/Shared`
-
-### Styling
-
-- Use **TailwindCSS utility classes**—avoid inline styles and custom CSS
-- Follow **mobile-first** responsive design with Tailwind breakpoints
-- Maintain visual consistency with existing components
-
-### Feedback
-
-- Show loading states during async operations
-- Display user-friendly error messages (no raw error codes)
-- Use modals for confirmations before destructive actions
-
----
-
-## 5. Architecture & Patterns
-
-### DRY (Don't Repeat Yourself)
-
-- If logic is repeated twice, extract into a utility function in `src/utils/`
-
-### SOLID Principles
-
-- Single Responsibility: each function/component does one thing well
-- Prefer composition over inheritance
-
-### Guard Clauses
-
-- Use early returns to avoid deep nesting:
-
-```javascript
-// ✅ Good
-if (!user) return null;
-if (!familyData) return <Loading />;
-return <Dashboard data={familyData} />;
-
-// ❌ Avoid
-if (user) {
-  if (familyData) {
-    return <Dashboard data={familyData} />;
-  } else {
-    return <Loading />;
-  }
-} else {
-  return null;
-}
-```
-
----
-
-## 6. Error Handling & Safety
-
-### No Silent Failures
-
-- Always catch errors and log them with context
-- Never use empty `catch` blocks
-
-### Input Validation
-
-- Validate at boundaries (Cloud Functions, form submissions)
-- Fail fast with descriptive error messages
-
-### Graceful Degradation
-
-- UI should display fallback states, not crash
-- Show helpful error messages to users
-
----
-
-## 7. Documentation & Comments
-
-### Comments
-
-- Explain **why**, not **what**—the code shows what, comments explain reasoning
-- Document complex business logic and non-obvious decisions
-
-### JSDoc
-
-- All exported functions should have JSDoc with `@param`, `@returns`, and `@throws`
-
----
-
-## 8. Testing (Aspirational)
-
-- When generating new features, consider unit tests alongside implementation
-- Test happy paths and at least one edge case
-- Verify Firebase security rules with the emulator before deploying
-
----
-
-## 9. Enforcement
-
-### ESLint
-
-The project enforces rules via `eslint.config.js`:
-
-- `no-alert: error` — Prevents browser popups
-- `no-unused-vars: error` — Keeps code clean
-
-### Workflows
-
-Consult `.agent/workflows/` for specific patterns:
-
-- `/modals` — How to display alerts and confirmations
-
-### Verification
-
-// turbo-all
-
-Before completing work:
-
-1. Run `npm run lint` to check for violations
-2. Run `npm run build` to verify compilation
-3. Test in browser to confirm functionality
+1.  **Development:**
+    -   `npm run watch`: specific webpack build for dev.
+2.  **Build:**
+    -   `npm run build`: Production build (minified).
+3.  **Release:**
+    -   Update version in `package.json` and `manifest.json`.
+    -   Build and zip the output for the Chrome Web Store.
