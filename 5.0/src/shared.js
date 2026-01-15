@@ -1130,7 +1130,7 @@ export const forceNavigator = {
 			"classic": "/ui/setup/releaseUpdate/ReleaseUpdatePage?setupid = ReleaseUpdates&retURL=%2Fui%2Fsetup%2FSetup%3Fsetupid%3DAdminSetup"
 		},
 		"setup.users": {
-			"lightning": "/lightning/setup/ManageUsers/home",
+			"lightning": "/lightning/setup/ManageUsersLightning/home",
 			"classic": "/005?isUserEntityOverride = 1&retURL=%2Fui%2Fsetup%2FSetup%3Fsetupid%3DUsers&setupid = ManageUsers"
 		},
 		"setup.roles": {
@@ -2006,7 +2006,7 @@ export const sfObjectsGetData = {
 				let key = "users." + f.Name
 				objCommands[key] = {
 					"key": key,
-					"url": `/lightning/setup/ManageUsers/page?address=%2F${f.Id}%3Fnoredirect%3D1%26isUserEntityOverride%3D1`,
+					"url": `/lightning/setup/ManageUsersLightning/page?address=%2F${f.Id}%3Fnoredirect%3D1%26isUserEntityOverride%3D1`,
 					"label": label + " >> "+ f.Name,
 					"sortValue" : 0.9  // Will cuase it to appear low on the sort
 				}
