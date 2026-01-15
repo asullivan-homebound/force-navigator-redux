@@ -2,6 +2,8 @@ import { forceNavigator, forceNavigatorSettings, _d } from "./shared"
 import { t } from "lisan"
 
 const metaData = {}
+let commandsHistory = {}
+
 const showElement = (element)=>{
 	chrome.tabs.query({currentWindow: true, active: true}, (tabs)=>{
 		switch(element) {
@@ -42,9 +44,15 @@ const getOtherExtensionCommands = (otherExtension, requestDetails, settings = {}
 }
 
 const parseMetadata = (data, url, settings = {}, serverUrl)=>{
-	if (data.length == 0 || typeof data.sobjects == "undefined") return false
+	console.log("parseMetadata data:", data)
+	if (!data || typeof data.sobjects == "undefined") {
+		console.warn("parseMetadata: invalid data", data)
+		return false
+	}
 	let mapKeys = Object.keys(forceNavigator.objectSetupLabelsMap)
-	return data.sobjects.reduce((commands, sObjectData) => forceNavigator.createSObjectCommands(commands, sObjectData, serverUrl), {})
+	let res = data.sobjects.reduce((commands, sObjectData) => forceNavigator.createSObjectCommands(commands, sObjectData, serverUrl), {})
+	console.log("parseMetadata returning commands count:", Object.keys(res).length)
+	return res
 }
 
 const goToUrl = (targetUrl, newTab, settings = {})=>{
@@ -61,7 +69,21 @@ const goToUrl = (targetUrl, newTab, settings = {})=>{
 			if (!relativeUrl.startsWith('/')) {
 				relativeUrl = '/' + relativeUrl
 			}
-			newUrl = tabs[0].url.match(/.*?\.com|.*?\.salesforce-setup\.com|.*?\.force\.com/)[0] + relativeUrl
+			
+			// Normalize domain prefix
+			let currentOrigin = tabs[0].url.match(/https:\/\/.*?\.com|https:\/\/.*?\.salesforce-setup\.com|https:\/\/.*?\.force\.com/)[0]
+			let domainPrefix = currentOrigin.replace('https://', '').replace('.lightning.force.com','').replace('.my.salesforce.com','').replace('.salesforce-setup.com','').replace('.force.com','')
+
+			if (relativeUrl.startsWith('/lightning/setup/') || relativeUrl.startsWith('/lightning/setup/')) {
+				newUrl = "https://" + domainPrefix + ".my.salesforce-setup.com" + relativeUrl
+			} else {
+				newUrl = "https://" + domainPrefix + ".lightning.force.com" + relativeUrl
+			}
+		}
+
+		if (!newUrl.startsWith('http') && !newUrl.startsWith('chrome-extension')) {
+			console.error("Invalid URL generated:", newUrl, "from targetUrl:", targetUrl)
+			newUrl = "https://" + newUrl
 		}
 
 		if(newTab)
@@ -80,91 +102,155 @@ chrome.commands.onCommand.addListener((command)=>{
 	}
 })
 chrome.runtime.onMessage.addListener((request, sender, sendResponse)=>{
-	var apiUrl = request.serverUrl?.replace('lightning.force.com','my.salesforce.com')
-	console.debug(apiUrl + " : " + request.action)
+	var apiUrlBase = request.serverUrl?.replace('.lightning.force.com', '.my.salesforce.com').replace('.salesforce-setup.com', '.my.salesforce.com').replace('.my.my.', '.my.')
+	console.debug(apiUrlBase + " : " + request.action)
 	switch(request.action) {
 		case "goToUrl":
 			goToUrl(request.url, request.newTab, request.settings)
+			sendResponse({})
 			break
 		case "getOtherExtensionCommands":
 			getOtherExtensionCommands(request.otherExtension, request, request.settings, sendResponse)
-			break
+			return true
 		case "getApiSessionId":
 			request.sid = request.uid = request.domain = request.oid = ""
-			chrome.cookies.getAll({}, (all)=>{
-				all.forEach((c)=>{
-					if(c.domain==request.serverUrl && c.name === "sid") {
-						request.sid = c.value
-						request.domain = c.domain
-						request.oid = request.sid.match(/([\w\d]+)/)[1]
+			var serverUrl = request.serverUrl
+			if (!serverUrl.startsWith('http')) serverUrl = "https://" + serverUrl
+			var domainPrefix = serverUrl.replace('https://', '').split('.')[0]
+			var apiHost = serverUrl.replace('https://', '').replace('.lightning.force.com', '.my.salesforce.com').replace('.salesforce-setup.com', '.my.salesforce.com').replace('.my.my.', '.my.')
+			var apiUrl = "https://" + apiHost
+
+			const processSession = (sid, domain) => {
+				console.log("Processing session:", {sid: sid ? sid.substring(0, 10) + "..." : null, domain, apiUrl});
+				if (!sid) {
+					console.log("No session data found for " + serverUrl)
+					sendResponse({error: "No session data found for " + serverUrl})
+					return 
+				}
+				let oid = sid.match(/([\w\d]+)/)[1]
+				forceNavigator.getHTTP( apiUrl + '/services/data/' + forceNavigator.apiVersion, "json",
+					{"Authorization": "Bearer " + sid, "Accept": "application/json"}
+				).then(response => {
+					console.log("Identity check response:", response);
+					if(response?.identity) {
+						let uid = response.identity.match(/005.*/)[0]
+						sendResponse({sessionId: sid, userId: uid, orgId: oid, apiUrl: apiHost})
 					}
+					else {
+						console.error("No identity in response", response);
+						sendResponse({error: "No user data found for " + oid + ". Response: " + JSON.stringify(response)})
+					}
+				}).catch(e => {
+					console.error("Identity lookup failed", e)
+					sendResponse({error: "Identity lookup failed: " + e.message})
 				})
-				if(request.sid === "") {
-					//Alternative method to get the SID. see https://stackoverflow.com/a/34993849
-					chrome.cookies.get({url: apiUrl, name: "sid", storeId: sender.tab.cookieStoreId}, c => {
-						if (c) {
-							request.sid = c.value
-							request.domain = c.domain
-							request.oid = request.sid.match(/([\w\d]+)/)[1]
-						}
-						if(request.sid === "") {
-							console.log("No session data found for " + request.serverUrl)
-							sendResponse({error: "No session data found for " + request.serverUrl})
-							return 
-						}
-						forceNavigator.getHTTP( apiUrl + '/services/data/' + forceNavigator.apiVersion, "json",
-							{"Authorization": "Bearer " + request.sid, "Accept": "application/json"}
-						).then(response => {
-							if(response?.identity) {
-								request.uid = response.identity.match(/005.*/)[0]
-								sendResponse({sessionId: request.sid, userId: request.uid, orgId: request.oid, apiUrl: request.domain})
+			}
+
+			// Prioritize .my.salesforce.com cookie for API calls, then fall back
+			chrome.cookies.get({url: apiUrl, name: "sid", storeId: sender.tab.cookieStoreId}, c => {
+				if (c && c.value) {
+					console.log("Found SID cookie for API URL:", apiUrl, "domain:", c.domain)
+					processSession(c.value, c.domain)
+				} else {
+					// Fallback: search all cookies for a matching domain
+					console.log("No direct cookie for", apiUrl, "- searching all cookies")
+					chrome.cookies.getAll({}, (all)=>{
+						let mySalesforceCookie = null
+						let lightningCookie = null
+						all.forEach((cookie)=>{
+							if(cookie.name === "sid") {
+								if (cookie.domain.includes(".my.salesforce.com") && cookie.domain.includes(domainPrefix)) {
+									mySalesforceCookie = cookie
+								} else if (cookie.domain.includes(domainPrefix)) {
+									lightningCookie = cookie
+								}
 							}
-							else sendResponse({error: "No user data found for " + request.oid})
 						})
-					}
-				)};
-		
+						let bestCookie = mySalesforceCookie || lightningCookie
+						if (bestCookie) {
+							console.log("Using fallback cookie from domain:", bestCookie.domain)
+							processSession(bestCookie.value, bestCookie.domain)
+						} else {
+							console.log("No session cookie found for", domainPrefix)
+							sendResponse({error: "No session cookie found for " + domainPrefix})
+						}
+					})
+				}
 			})
-			break
+			return true
 		case 'getActiveFlows':
 			let flowCommands = {}
 			forceNavigator.getHTTP("https://" + request.apiUrl + '/services/data/' + forceNavigator.apiVersion + '/query/?q=select+ActiveVersionId,Label+from+FlowDefinitionView+where+IsActive=true', "json",
 				{"Authorization": "Bearer " + request.sessionId, "Accept": "application/json"})
 				.then(response => {
-					let targetUrl = request.domain + "/builder_platform_interaction/flowBuilder.app?flowId="
+					let flowTargetUrl = request.domain + "/builder_platform_interaction/flowBuilder.app?flowId="
 					response.records.forEach(f=>{
 						flowCommands["flow." + f.ActiveVersionId] = {
 							"key": "flow." + f.ActiveVersionId,
-							"url": targetUrl + f.ActiveVersionId,
+							"url": flowTargetUrl + f.ActiveVersionId,
 							"label": [t("prefix.flows"), f.Label].join(" > ")
 						}
 					})
 					sendResponse(flowCommands)
-				}).catch(e=>_d(e))
-			break
+				}).catch(e=>{ _d(e); sendResponse({error: e.message}) })
+			return true
 		case 'getMetadata':
-			if(metaData[request.sessionHash] == null || request.force)
+			let cacheKey = request.sessionHash || request.apiUrl
+			if(metaData[cacheKey] == null || request.force)
 				forceNavigator.getHTTP("https://" + request.apiUrl + '/services/data/' + forceNavigator.apiVersion + '/sobjects/', "json",
 					{"Authorization": "Bearer " + request.sessionId, "Accept": "application/json"})
 					.then(response => {
-						// TODO good place to filter out unwanted objects
-						metaData[request.sessionHash] = parseMetadata(response, request.domain, request.settings, request.serverUrl)
-						sendResponse(metaData[request.sessionHash])
-					}).catch(e=>_d(e))
+						let parsed = parseMetadata(response, request.domain, request.settings, request.serverUrl)
+						if (parsed) {
+							metaData[cacheKey] = parsed
+							sendResponse(metaData[cacheKey])
+						} else {
+							sendResponse({error: "Failed to parse metadata"})
+						}
+					}).catch(e=>{ _d(e); sendResponse({error: e.message}) })
 			else
-				sendResponse(metaData[request.sessionHash])
-			break
+				sendResponse(metaData[cacheKey])
+			return true
 		case 'createTask':
 			forceNavigator.getHTTP("https://" + request.apiUrl + "/services/data/" + forceNavigator.apiVersion + "/sobjects/Task",
 				"json", {"Authorization": "Bearer " + request.sessionId, "Content-Type": "application/json" },
 				{"Subject": request.subject, "OwnerId": request.userId}, "POST")
-			.then(function (response) { sendResponse(response) })
-			break
+			.then(function (response) { sendResponse(response) }).catch(e => { _d(e); sendResponse({error: e.message}) })
+			return true
 		case 'searchLogins':
 			forceNavigator.getHTTP("https://" + request.apiUrl + "/services/data/" + forceNavigator.apiVersion + "/query/?q=SELECT Id, Name, Username FROM User WHERE Name LIKE '%25" + request.searchValue.trim() + "%25' OR Username LIKE '%25" + request.searchValue.trim() + "%25'", "json", {"Authorization": "Bearer " + request.sessionId, "Content-Type": "application/json" })
 			.then(function(success) { sendResponse(success) }).catch(function(error) {
-				console.error(error)
+				sendResponse({error: error.message})
 			})
+			return true
+		case 'updateLastCommand':
+			if (request.key == undefined || request.url == undefined) {
+				sendResponse({})
+				break
+			}
+			if (commandsHistory[ request.orgId ] == undefined)
+				commandsHistory[ request.orgId ] = []
+			var command=[ request.key, request.url ]
+			//if already exists in history, move it to top
+			for (var i=commandsHistory[ request.orgId ].length - 1; i>=0; i--) {
+				if (commandsHistory[ request.orgId ][i][0] == request.key) {
+					commandsHistory[ request.orgId ].splice( i, 1)
+					break
+				}
+			}
+			commandsHistory[ request.orgId ].push(command)
+			if (commandsHistory[ request.orgId ].length > 8) {
+				commandsHistory[ request.orgId ].shift()
+			}
+			sendResponse({})
+			break
+		case 'getCommandsHistory':
+			sendResponse({ "commandsHistory": commandsHistory[ request.orgId ] })
+			break
+		default:
+			// Unknown action - respond immediately to prevent channel closure warning
+			sendResponse({})
+			break
 	}
 	return true
 })

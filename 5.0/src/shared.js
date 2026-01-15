@@ -9,6 +9,24 @@ export const _d = (i)=>{
 	console.debug("_D() ---------------------")
 }
 
+export const safeSendMessage = (message, callback) => {
+	if (chrome.runtime?.id) {
+		try {
+			chrome.runtime.sendMessage(message, response => {
+				if (chrome.runtime.lastError) {
+					console.warn("safeSendMessage: ", chrome.runtime.lastError.message)
+					return
+				}
+				if (callback) callback(response)
+			})
+		} catch (e) {
+			console.warn("safeSendMessage error: ", e.message)
+		}
+	} else {
+		console.warn("Extension context invalidated. Please refresh the page.")
+	}
+}
+
 const inputHandler = (function(m) {
 	var _global_callbacks = {},
 		_original_stop_callback = m.stopCallback
@@ -119,7 +137,7 @@ export const ui = {
 		let input = ui.quickSearch.value
 		if (input=='') {
 			ui.clearOutput()
-			chrome.runtime.sendMessage({"action": "getCommandsHistory",orgId:forceNavigator.organizationId},
+			safeSendMessage({"action": "getCommandsHistory",orgId:forceNavigator.organizationId},
 			response=>{
 				if(response.commandsHistory)
 					for (let i = response.commandsHistory.length-1; i>=0; i--) {
@@ -537,7 +555,7 @@ console.log(cmdKey)
 				"key": forceNavigator.organizationId,
 				"sessionId": forceNavigator.sessionId,
 			}
-			chrome.runtime.sendMessage(
+			safeSendMessage(
 				options,
 				response=>{
 					if(response && response.info) { console.info("info expanding: " + response.info); return }
@@ -591,7 +609,7 @@ export const forceNavigatorSettings = {
 			if(forceNavigatorSettings.theme)
 				document.getElementById('sfnavStyleBox').classList = [forceNavigatorSettings.theme]
 			if(forceNavigator.sessionId !== null) { return }
-			chrome.runtime.sendMessage({ "action": "getApiSessionId", "serverUrl": forceNavigator.serverUrl }, response=>{
+			safeSendMessage({ "action": "getApiSessionId", "serverUrl": forceNavigator.serverUrl }, response=>{
 				if(response && response.error) { console.error("response", response, chrome.runtime.lastError); return }
 				try {
 					forceNavigator.sessionId = unescape(response.sessionId)
@@ -688,7 +706,8 @@ export const forceNavigator = {
 			"apiname": name
 		}
 		if(forceNavigatorSettings.lightningMode) {
-			let targetUrl = serverUrl + "/lightning/setup/ObjectManager/" + name
+			// Use relative URLs - goToUrl will add the correct domain
+			let targetUrl = "/lightning/setup/ObjectManager/" + name
 			mapKeys.forEach(key=>{
 				commands[keyPrefix + "." + key] = {
 					"key": keyPrefix + "." + key,
@@ -780,7 +799,7 @@ export const forceNavigator = {
 			return true
 		}
 		//Add the command to 'recent commands' list
-		chrome.runtime.sendMessage({
+		safeSendMessage({
 			"action": "updateLastCommand",
 			"orgId":forceNavigator.organizationId,
 			"key": command.key,
@@ -823,7 +842,7 @@ export const forceNavigator = {
 				targetUrl = forceNavigator.serverInstance + "/secur/logout.jsp"
 				break
 			case "commands.help":
-				chrome.runtime.sendMessage({"action": "help"})
+				safeSendMessage({"action": "help"})
 				ui.hideSearchBox()
 				return true
 			case "commands.toggleAllCheckboxes":
@@ -916,8 +935,10 @@ export const forceNavigator = {
 	"getServerInstance": (settings = {})=>{
 		let serverUrl
 		let url = location.origin + ""
-		if(settings.lightningMode) {// if(url.indexOf("lightning.force") != -1)
-			serverUrl = url.replace('lightning.force.com','').replace('my.salesforce.com','') + "lightning.force.com"
+		let domainPrefix = url.replace('https://', '').split('.')[0]
+		
+		if(settings.lightningMode) {
+			serverUrl = domainPrefix + ".lightning.force.com"
 		} else {
 			if(url.includes("salesforce"))
 				serverUrl = url.substring(0, url.indexOf("salesforce")) + "salesforce.com"
@@ -927,7 +948,7 @@ export const forceNavigator = {
 				let urlParseArray = url.split(".")
 				serverUrl = urlParseArray[1] + '.salesforce.com'
 			} else {
-				serverUrl = url.replace('lightning.force.com','') + "my.salesforce.com"
+				serverUrl = domainPrefix + ".my.salesforce.com"
 			}
 		}
 		forceNavigator.serverUrl = serverUrl
@@ -944,7 +965,7 @@ export const forceNavigator = {
 		if(Object.keys(data).length > 0)
 			request.body = JSON.stringify(data)
 		return fetch(getUrl, request).then(response => {
-			forceNavigator.apiUrl = response.url.match(/:\/\/(.*)salesforce.com/)[1] + "salesforce.com"
+			forceNavigator.apiUrl = response.url.match(/:\/\/(.*)(salesforce\.com|force\.com|salesforce-setup\.com)/)[1] + response.url.match(/:\/\/(.*)(salesforce\.com|force\.com|salesforce-setup\.com)/)[2]
 			switch(type) {
 				case "json": return response.clone().json()
 				case "document": return response.clone().text()
@@ -979,21 +1000,26 @@ export const forceNavigator = {
 				"force": force,
 				"sessionId": forceNavigator.sessionId,
 				"serverUrl" : forceNavigator.serverUrl,
+				"settings": settings,
 				"action": "getMetadata"
 			}
-		chrome.runtime.sendMessage(options, response=>Object.assign(forceNavigator.commands, response))
-		chrome.runtime.sendMessage(Object.assign(options, {"action": "getSobjectNameFields"}), response=>{
+		console.log("loadCommands options:", options)
+		safeSendMessage(options, response=>{
+			console.log("getMetadata response:", response)
+			Object.assign(forceNavigator.commands, response)
+		})
+		safeSendMessage(Object.assign(options, {"action": "getSobjectNameFields"}), response=>{
 				Object.assign(forceNavigator.labelToNameFieldMapping, response.labelToNameFieldMapping)
 				Object.assign(forceNavigator.labelToSobjectApiNameMapping, response.labelToSobjectApiNameMapping)
 				//console.log("after getSobjectNameFields, loaded forceNavigator.labelToNameFieldMapping=",Object.keys(forceNavigator.labelToNameFieldMapping).length)
 		})
-		chrome.runtime.sendMessage(Object.assign(options, {"action": "getActiveFlows"}), response=>Object.assign(forceNavigator.commands, response))
-		forceNavigator.otherExtensions.filter(e=>{ return e.platform == (!!window.chrome ? "chrome-extension" : "moz-extension") }).forEach(e=>chrome.runtime.sendMessage(
+		safeSendMessage(Object.assign(options, {"action": "getActiveFlows"}), response=>Object.assign(forceNavigator.commands, response))
+		forceNavigator.otherExtensions.filter(e=>{ return e.platform == (!!window.chrome ? "chrome-extension" : "moz-extension") }).forEach(e=>safeSendMessage(
 			Object.assign(options, { "action": "getOtherExtensionCommands", "otherExtension": e }), r=>{ return Object.assign(forceNavigator.commands, r) })
 		)
 		ui.hideLoadingIndicator()
 	},
-	"goToUrl": (url, newTab, settings={})=>chrome.runtime.sendMessage({
+	"goToUrl": (url, newTab, settings={})=>safeSendMessage({
 		action: "goToUrl",
 		url: url,
 		newTab: newTab,
@@ -1007,7 +1033,7 @@ export const forceNavigator = {
 		let searchValue = ui.searchBox.querySelector('input').value.toLowerCase().replace(t("prefix.loginAs").toLowerCase(), "")
 		if(![null,undefined,""].includes(searchValue) && searchValue.length > 1) {
 			ui.showLoadingIndicator()
-			chrome.runtime.sendMessage({
+			safeSendMessage({
 				action:'searchLogins', apiUrl: forceNavigator.apiUrl,
 				sessionId: forceNavigator.sessionId,
 				domain: forceNavigator.serverInstance,

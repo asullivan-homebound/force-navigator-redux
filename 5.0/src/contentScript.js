@@ -1,4 +1,4 @@
-import { ui, forceNavigator, forceNavigatorSettings, _d } from "./shared"
+import { ui, forceNavigator, forceNavigatorSettings, _d, safeSendMessage } from "./shared"
 import { t } from "lisan"
 
 forceNavigator.pasteFromClipboard = (newtab)=>{
@@ -78,7 +78,7 @@ forceNavigator.launchMergerCases = (otherId)=>forceNavigator.launchMerger(otherI
 forceNavigator.createTask = (subject)=>{
 	ui.showLoadingIndicator()
 	if(["",null,undefined].includes(subject) && !forceNavigator.userId) { console.error("Empty Task subject"); hideLoadingIndicator(); return }
-	chrome.runtime.sendMessage({
+	safeSendMessage({
 			"action":'createTask', "apiUrl": forceNavigator.apiUrl,
 			"sessionId": forceNavigator.sessionId,
 			"domain": forceNavigator.serverInstance,
