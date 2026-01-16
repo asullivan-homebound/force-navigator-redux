@@ -847,6 +847,9 @@ export const forceNavigator = {
 				let homePrefix = forceNavigator.serverInstance.split('.')[0]
 				targetUrl = "https://" + homePrefix + ".lightning.force.com/lightning/page/home#/"
 				break
+			case "commands.appHome":
+				targetUrl = "https://" + forceNavigator.serverInstance + "/lightning/page/home#/"
+				break
 			case "commands.logout":
 				targetUrl = forceNavigator.serverInstance + "/secur/logout.jsp"
 				break
@@ -899,6 +902,7 @@ export const forceNavigator = {
 		forceNavigator.commands = {}
 		Array(
 			"commands.home",
+			"commands.appHome",
 			"commands.logout",
 			"commands.setup",
 			"commands.mergeAccounts",

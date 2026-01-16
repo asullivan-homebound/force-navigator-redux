@@ -13,6 +13,7 @@ module.exports = {
 		"settings.theme": "Theme",
 		"settings.useApiName": "Show API Name",
 		"commands.home": "Home",
+		"commands.appHome": "App Home",
 		"commands.help": "Help",
 		"commands.setup": "Setup",
 		"commands.mergeAccounts": "Merge Accounts",

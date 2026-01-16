@@ -53,6 +53,7 @@ UPDATE NOTES
 1/15/26 - Fixed Custom Object durable ID retrieval. The extension now queries the Tooling API to fetch the correct `01I` IDs for custom objects, ensuring Object Manager links work correctly in Lightning.
 1/15/26 - Fixed user management links to work in Enhanced User Management. Fixed URL structure to prevent duplicate root URL paths.
 1/15/26 - Fixed Active Flow URL construction. The extension now correctly constructs absolute URLs for active flows, ensuring they open in the Flow Builder successfully.
+1/15/26 - Added "App Home" command to navigate directly to the Lightning App Home page.
 
 Maintainer(s):
 [Alex Sullivan](https://alexandersullivan.com)
