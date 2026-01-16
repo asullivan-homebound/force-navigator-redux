@@ -17,6 +17,7 @@ Open the Navigator and
 -   [New Feature] Toggle all checkboxes on the page for when subtracting from a selection is faster
 -   [Fix] Better Classic to Lightning URL mapping
 -   [Fix] Better loading checks so it won't error out trying to set the style of the search box
+-   [Fix] Fetch Custom Object Durable IDs for Object Manager links
 
 -   Use the account merge tool by typing "Merge Accounts <optional Account ID>"
     Call the Classic Account Merge from either interface using the Account you are on and the Salesforce ID in your clipboard or entered into the command box. You can use a tool like Salesforce CopyPasteGo (https://summerlin.co/copypastego) to easily grab the ID of a Salesforce record
@@ -43,19 +44,12 @@ Default shortcut keys
 
 NOTE: If you have a custom instance Domain Name, you may have to create a CSP Trusted Site Definition for your Classic domain URL in order for this extension to work - more info here https://developer.salesforce.com/docs/atlas.en-us.lightning.meta/lightning/csp_trusted_sites.htm
 
-Contribute to this extension at https://github.com/dannysummerlin/force-navigator
+Contribute to this extension at https://github.com/asullivan-homebound/force-navigator-redux
 
 UPDATE NOTES
 ########################################
 1/15/26 - Fixed Custom Object durable ID retrieval. The extension now queries the Tooling API to fetch the correct `01I` IDs for custom objects, ensuring Object Manager links work correctly in Lightning.
-7/5 - Pride Month never ends, go learn about Marsha P Johnson - fixed my fixing, Lightning URLs properly replace Classic links better now, still more to be done on this though
-5/28 - Watch https://youtube.com/c/FDSignifire - Several fixes, added checkbox toggle, removed unused permission
-
-9/11 - #justiceforbreonnataylor (182 days and counting) - Added the ability to call the Classic Account merge tool from an Account page. Be sure to have the ID of the Account you want to merge in your clipboard; added Lightning Record Page shortcut for custom objects
-
-8/29 - Rest in Power Chadwick Boseman. Thanks to CKloppel for pointing out missing API and click handling, now updated to v49 and new-tab clicks work again
-
-6/19 - Happy Juneteenth! Thanks to kacrouse for Custom Metadata Lightning handling, also updating several changed URLs across the platform
+1/15/26 - Fixed user management links to work in Enhanced User Management. Fixed URL structure to prevent duplicate root URL paths.
 
 Maintainer(s):
 [Alex Sullivan](https://alexandersullivan.com)
