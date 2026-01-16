@@ -183,7 +183,7 @@ const parseMetadata = (data, url, settings = {}, serverUrl, durableIdMap = {})=>
 
 const goToUrl = (targetUrl, newTab, settings = {})=>{
 	chrome.tabs.query({currentWindow: true, active: true}, (tabs)=>{
-		const re = new RegExp("\\w+-extension:\/\/"+chrome.runtime.id,"g")
+		const re = new RegExp("\\w+-extension:\\/\\/"+chrome.runtime.id,"g")
 		targetUrl = targetUrl.replace(re,'')
 		
 		let newUrl
@@ -196,20 +196,15 @@ const goToUrl = (targetUrl, newTab, settings = {})=>{
 				relativeUrl = '/' + relativeUrl
 			}
 			
-			// Normalize domain prefix
-			let currentOrigin = tabs[0].url.match(/https:\/\/.*?\.com|https:\/\/.*?\.salesforce-setup\.com|https:\/\/.*?\.force\.com/)[0]
-			// Remove all domain suffixes to get just the org prefix (e.g., "homebound")
-			let domainPrefix = currentOrigin.replace('https://', '')
-				.replace('.my.salesforce-setup.com', '')
-				.replace('.my.salesforce.com', '')
-				.replace('.lightning.force.com', '')
-				.replace('.salesforce-setup.com', '')
-				.replace('.force.com', '')
+			// Use regex to capture the full domain prefix and sandbox segment.
+			const domainMatch = tabs[0].url.match(/https:\/\/(.+?)\.(sandbox\.)?(lightning\.force\.com|my\.salesforce\.com|my\.salesforce-setup\.com|salesforce\.com|cloudforce\.com|visual\.force\.com)/)
+			let domainPrefix = domainMatch ? domainMatch[1] : tabs[0].url.replace('https://', '').split('.')[0]
+			const isSandbox = domainMatch && domainMatch[2] === 'sandbox.'
 
-			if (relativeUrl.startsWith('/lightning/setup/') || relativeUrl.startsWith('/lightning/setup/')) {
-				newUrl = "https://" + domainPrefix + ".my.salesforce-setup.com" + relativeUrl
+			if (relativeUrl.startsWith('/lightning/setup/')) {
+				newUrl = "https://" + domainPrefix + (isSandbox ? ".sandbox" : "") + ".my.salesforce-setup.com" + relativeUrl
 			} else {
-				newUrl = "https://" + domainPrefix + ".lightning.force.com" + relativeUrl
+				newUrl = "https://" + domainPrefix + (isSandbox ? ".sandbox" : "") + ".lightning.force.com" + relativeUrl
 			}
 		}
 
@@ -248,8 +243,11 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse)=>{
 			request.sid = request.uid = request.domain = request.oid = ""
 			var serverUrl = request.serverUrl
 			if (!serverUrl.startsWith('http')) serverUrl = "https://" + serverUrl
-			var domainPrefix = serverUrl.replace('https://', '').split('.')[0]
-			var apiHost = serverUrl.replace('https://', '').replace('.lightning.force.com', '.my.salesforce.com').replace('.salesforce-setup.com', '.my.salesforce.com').replace('.my.my.', '.my.')
+			// Use regex to correctly identify domain prefix and sandbox segment.
+			const bgSessionDomainMatch = serverUrl.match(/https:\/\/(.+?)\.(sandbox\.)?(lightning\.force\.com|my\.salesforce\.com|my\.salesforce-setup\.com|salesforce\.com|cloudforce\.com|visual\.force\.com)/)
+			var domainPrefix = bgSessionDomainMatch ? bgSessionDomainMatch[1] : serverUrl.replace('https://', '').split('.')[0]
+			const bgSessionIsSandbox = bgSessionDomainMatch && bgSessionDomainMatch[2] === 'sandbox.'
+			var apiHost = domainPrefix + (bgSessionIsSandbox ? ".sandbox" : "") + ".my.salesforce.com"
 			var apiUrl = "https://" + apiHost
 
 			const processSession = (sid, domain) => {

@@ -1,6 +1,6 @@
 {
   "name": "force-navigator-redux",
-  "version": "5.0.1",
+  "version": "5.0.2",
   "description": "Salesforce Navigator Redux",
   "private": true,
   "scripts": {

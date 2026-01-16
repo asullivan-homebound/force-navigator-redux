@@ -944,10 +944,14 @@ export const forceNavigator = {
 	"getServerInstance": (settings = {})=>{
 		let serverUrl
 		let url = location.origin + ""
-		let domainPrefix = url.replace('https://', '').split('.')[0]
-		
+		// Use regex to capture the full domain prefix before the known suffix.
+		// This correctly handles sandbox URLs like homebound--partialsb.sandbox.lightning.force.com
+		const domainMatch = url.match(/https:\/\/(.+?)\.(sandbox\.)?(lightning\.force\.com|my\.salesforce\.com|my\.salesforce-setup\.com|salesforce\.com|cloudforce\.com|visual\.force\.com)/)
+		let domainPrefix = domainMatch ? domainMatch[1] : url.replace('https://', '').split('.')[0]
+		const isSandbox = domainMatch && domainMatch[2] === 'sandbox.'
+
 		if(settings.lightningMode) {
-			serverUrl = domainPrefix + ".lightning.force.com"
+			serverUrl = domainPrefix + (isSandbox ? ".sandbox" : "") + ".lightning.force.com"
 		} else {
 			if(url.includes("salesforce"))
 				serverUrl = url.substring(0, url.indexOf("salesforce")) + "salesforce.com"
@@ -957,7 +961,7 @@ export const forceNavigator = {
 				let urlParseArray = url.split(".")
 				serverUrl = urlParseArray[1] + '.salesforce.com'
 			} else {
-				serverUrl = domainPrefix + ".my.salesforce.com"
+				serverUrl = domainPrefix + (isSandbox ? ".sandbox" : "") + ".my.salesforce.com"
 			}
 		}
 		forceNavigator.serverUrl = serverUrl
