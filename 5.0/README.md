@@ -10,11 +10,9 @@ Get more done in Salesforce - list and search records, make new ones, create a t
 This extension helps you get to any Salesforce page quickly. Just type in what you need to do!
 Compatible with Lightning and Classic
 
-Open the Navigator and
+Open the Navigator and type in what you need to do!
 
--   [New Permission] Can now save some settings, like theme and profile setup toggle, needs Storage permission to save preferences
--   [New Feature] Themes! Right now has Default, Dark, Unicorn, and Solarized, open to suggestions
--   [New Feature] Toggle all checkboxes on the page for when subtracting from a selection is faster
+-   [New Feature] Added "App Home" top-level link to navigate directly to the Lightning App Home page.
 -   [Fix] Better Classic to Lightning URL mapping
 -   [Fix] Better loading checks so it won't error out trying to set the style of the search box
 -   [Fix] Fetch Custom Object Durable IDs for Object Manager links
@@ -50,9 +48,13 @@ Contribute to this extension at https://github.com/asullivan-homebound/force-nav
 UPDATE NOTES
 ########################################
 1/15/26 - Fixed sandbox environment support. The extension now correctly identifies and uses sandbox domain segments (e.g., `.sandbox`) for session and URL handling.
+
 1/15/26 - Fixed Custom Object durable ID retrieval. The extension now queries the Tooling API to fetch the correct `01I` IDs for custom objects, ensuring Object Manager links work correctly in Lightning.
+
 1/15/26 - Fixed user management links to work in Enhanced User Management. Fixed URL structure to prevent duplicate root URL paths.
+
 1/15/26 - Fixed Active Flow URL construction. The extension now correctly constructs absolute URLs for active flows, ensuring they open in the Flow Builder successfully.
+
 1/15/26 - Added "App Home" command to navigate directly to the Lightning App Home page.
 
 Maintainer(s):
