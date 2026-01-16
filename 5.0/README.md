@@ -18,6 +18,7 @@ Open the Navigator and
 -   [Fix] Better Classic to Lightning URL mapping
 -   [Fix] Better loading checks so it won't error out trying to set the style of the search box
 -   [Fix] Fetch Custom Object Durable IDs for Object Manager links
+-   [Fix] Active Flow URL construction
 
 -   Use the account merge tool by typing "Merge Accounts <optional Account ID>"
     Call the Classic Account Merge from either interface using the Account you are on and the Salesforce ID in your clipboard or entered into the command box. You can use a tool like Salesforce CopyPasteGo (https://summerlin.co/copypastego) to easily grab the ID of a Salesforce record
@@ -51,6 +52,7 @@ UPDATE NOTES
 1/15/26 - Fixed sandbox environment support. The extension now correctly identifies and uses sandbox domain segments (e.g., `.sandbox`) for session and URL handling.
 1/15/26 - Fixed Custom Object durable ID retrieval. The extension now queries the Tooling API to fetch the correct `01I` IDs for custom objects, ensuring Object Manager links work correctly in Lightning.
 1/15/26 - Fixed user management links to work in Enhanced User Management. Fixed URL structure to prevent duplicate root URL paths.
+1/15/26 - Fixed Active Flow URL construction. The extension now correctly constructs absolute URLs for active flows, ensuring they open in the Flow Builder successfully.
 
 Maintainer(s):
 [Alex Sullivan](https://alexandersullivan.com)

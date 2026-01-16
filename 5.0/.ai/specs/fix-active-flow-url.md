@@ -9,12 +9,14 @@
 
 - **Technical Implementation:**
 
-  - **`src/background.js`**:
+  - **`src/serviceWorker.js`**:
+    - **Note:** Do not modify `src/background.js`; it appears to be an unused file. The active background script is `src/serviceWorker.js`.
     - Locate the `getActiveFlows` message handler.
     - Modify the `flowTargetUrl` construction.
     - Currently: `let flowTargetUrl = request.domain + "/builder_platform_interaction/flowBuilder.app?flowId="`
     - Change to: `let flowTargetUrl = "https://" + request.domain + "/builder_platform_interaction/flowBuilder.app?flowId="`
-    - Ensure `request.domain` is treated as the host. If `request.domain` potentially contains `https://` (unlikely based on analysis but good to be safe), sanitize it or check before prepending. Use the `forceNavigator.serverInstance` logic as the source of truth which strips protocol.
+    - **Context:** `request.domain` is populated from `forceNavigator.serverInstance` (in `shared.js`), which has recently been updated to correctly include `.sandbox` segments. By prepending `https://`, we create an absolute URL.
+    - **Why:** This ensures `goToUrl` (in `serviceWorker.js`) treats it as an absolute URL and bypasses its relative-path reconstruction logic (which causes the root URL duplication issue).
 
 - **Test Coverage:**
   - **Unit Tests:**

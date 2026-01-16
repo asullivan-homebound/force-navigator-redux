@@ -187,7 +187,7 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse)=>{
 			forceNavigator.getHTTP("https://" + request.apiUrl + '/services/data/' + forceNavigator.apiVersion + '/query/?q=select+ActiveVersionId,Label+from+FlowDefinitionView+where+IsActive=true', "json",
 				{"Authorization": "Bearer " + request.sessionId, "Accept": "application/json"})
 				.then(response => {
-					let flowTargetUrl = request.domain + "/builder_platform_interaction/flowBuilder.app?flowId="
+					let flowTargetUrl = "https://" + request.domain + "/builder_platform_interaction/flowBuilder.app?flowId="
 					response.records.forEach(f=>{
 						flowCommands["flow." + f.ActiveVersionId] = {
 							"key": "flow." + f.ActiveVersionId,
