@@ -46,7 +46,9 @@ NOTE: If you have a custom instance Domain Name, you may have to create a CSP Tr
 Contribute to this extension at https://github.com/asullivan-homebound/force-navigator-redux
 
 UPDATE NOTES
+
 ########################################
+
 1/15/26 - Fixed sandbox environment support. The extension now correctly identifies and uses sandbox domain segments (e.g., `.sandbox`) for session and URL handling.
 
 1/15/26 - Fixed Custom Object durable ID retrieval. The extension now queries the Tooling API to fetch the correct `01I` IDs for custom objects, ensuring Object Manager links work correctly in Lightning.
