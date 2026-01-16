@@ -1,6 +1,6 @@
 {
 	"name": "Salesforce Navigator Redux",
-	"version": "5.0.0",
+	"version": "5.0.1",
 	"manifest_version": 3,
 	"description": "Get more done in Salesforce - list and search records, make new ones, create a task or login as on the fly!",
 	"action": {

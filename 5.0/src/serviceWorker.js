@@ -43,14 +43,14 @@ const getOtherExtensionCommands = (otherExtension, requestDetails, settings = {}
 	}
 }
 
-const parseMetadata = (data, url, settings = {}, serverUrl)=>{
+const parseMetadata = (data, url, settings = {}, serverUrl, durableIdMap = {})=>{
 	console.log("parseMetadata data:", data)
 	if (!data || typeof data.sobjects == "undefined") {
 		console.warn("parseMetadata: invalid data", data)
 		return false
 	}
 	let mapKeys = Object.keys(forceNavigator.objectSetupLabelsMap)
-	let res = data.sobjects.reduce((commands, sObjectData) => forceNavigator.createSObjectCommands(commands, sObjectData, serverUrl), {})
+	let res = data.sobjects.reduce((commands, sObjectData) => forceNavigator.createSObjectCommands(commands, sObjectData, serverUrl, durableIdMap), {})
 	console.log("parseMetadata returning commands count:", Object.keys(res).length)
 	return res
 }
@@ -205,8 +205,29 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse)=>{
 			if(metaData[cacheKey] == null || request.force)
 				forceNavigator.getHTTP("https://" + request.apiUrl + '/services/data/' + forceNavigator.apiVersion + '/sobjects/', "json",
 					{"Authorization": "Bearer " + request.sessionId, "Accept": "application/json"})
-					.then(response => {
-						let parsed = parseMetadata(response, request.domain, request.settings, request.serverUrl)
+					.then(async response => {
+						const customObjects = response.sobjects.filter(s => s.name.endsWith("__c"))
+						const durableIdMap = {}
+						if (customObjects.length > 0) {
+							const batchSize = 100
+							for (let i = 0; i < customObjects.length; i += batchSize) {
+								const batch = customObjects.slice(i, i + batchSize)
+								const devNames = batch.map(s => `'${s.name.replace(/__c$/, "")}'`).join(",")
+								const query = `SELECT Id, DeveloperName FROM CustomObject WHERE DeveloperName IN (${devNames})`
+								const toolingUrl = `https://${request.apiUrl}/services/data/${forceNavigator.apiVersion}/tooling/query/?q=${encodeURIComponent(query)}`
+								try {
+									const toolingResponse = await forceNavigator.getHTTP(toolingUrl, "json", {"Authorization": "Bearer " + request.sessionId, "Accept": "application/json"})
+									if (toolingResponse && toolingResponse.records) {
+										toolingResponse.records.forEach(r => {
+											durableIdMap[r.DeveloperName + "__c"] = r.Id
+										})
+									}
+								} catch (e) {
+									console.error("Tooling API query failed", e)
+								}
+							}
+						}
+						let parsed = parseMetadata(response, request.domain, request.settings, request.serverUrl, durableIdMap)
 						if (parsed) {
 							metaData[cacheKey] = parsed
 							sendResponse(metaData[cacheKey])

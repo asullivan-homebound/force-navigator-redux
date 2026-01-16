@@ -688,7 +688,7 @@ export const forceNavigator = {
 			_d(e)
 		}
 	},
-	"createSObjectCommands": (commands, sObjectData, serverUrl) => {
+	"createSObjectCommands": (commands, sObjectData, serverUrl, durableIdMap = {}) => {
 		const { labelPlural, label, name, keyPrefix } = sObjectData
 		const mapKeys = Object.keys(forceNavigator.objectSetupLabelsMap)
 		if (!keyPrefix || forceNavigatorSettings.skipObjects.includes(keyPrefix)) { return commands }
@@ -707,8 +707,12 @@ export const forceNavigator = {
 			"apiname": name
 		}
 		if(forceNavigatorSettings.lightningMode) {
+			let identifier = name;
+			if (durableIdMap && durableIdMap[name]) {
+				identifier = durableIdMap[name];
+			}
 			// Use relative URLs - goToUrl will add the correct domain
-			let targetUrl = "/lightning/setup/ObjectManager/" + name
+			let targetUrl = "/lightning/setup/ObjectManager/" + identifier
 			mapKeys.forEach(key=>{
 				commands[keyPrefix + "." + key] = {
 					"key": keyPrefix + "." + key,

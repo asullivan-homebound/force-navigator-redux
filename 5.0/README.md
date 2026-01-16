@@ -47,6 +47,7 @@ Contribute to this extension at https://github.com/dannysummerlin/force-navigato
 
 UPDATE NOTES
 ########################################
+1/15/26 - Fixed Custom Object durable ID retrieval. The extension now queries the Tooling API to fetch the correct `01I` IDs for custom objects, ensuring Object Manager links work correctly in Lightning.
 7/5 - Pride Month never ends, go learn about Marsha P Johnson - fixed my fixing, Lightning URLs properly replace Classic links better now, still more to be done on this though
 5/28 - Watch https://youtube.com/c/FDSignifire - Several fixes, added checkbox toggle, removed unused permission
 
