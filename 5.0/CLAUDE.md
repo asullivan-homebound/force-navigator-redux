@@ -1,12 +1,6 @@
-# Gemini CLI Instructions
+# CLAUDE.md
 
-This file provides guidance to Gemini CLI when working with code in this repository.
-
-## Additional Context
-
-Before proceeding with any task, read the following files to ground yourself in project conventions:
-- `.ai/context/tech-stack.md` — Coding standards and tech stack details
-- `.ai/context/product.md` — Product vision, personas, and core user flows
+This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
 ## Project Overview
 
@@ -59,6 +53,12 @@ Webpack config is split across `config/`:
 ### Localization
 
 Uses `lisan` library. Locale files live in `src/languages/`. English strings are in `src/languages/en-US.js`. Use `t("key")` from lisan for any user-facing strings.
+
+## Additional Context
+
+The `.ai/context/` directory contains supplementary reference files:
+- `tech-stack.md` — Full coding standards and tech stack details
+- `product.md` — Product vision, personas, and core user flows
 
 ## Coding Standards
 
